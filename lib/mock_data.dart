@@ -1,0 +1,443 @@
+List<Map<String, dynamic>> mockPets = [
+  {
+    'id': 'pet-001',
+    'chipNumber': '985112300000001',
+    'name': 'โบโบ้',
+    'type': 'สุนัข',
+    'species': 'สุนัข',
+    'breed': 'พันธุ์ทาง',
+    'gender': 'เพศผู้',
+    'birthDate': null,
+    'ageYears': '2',
+    'weightKg': '14',
+    'color': 'น้ำตาล',
+    'traits': 'ขี้เล่น เป็นมิตร',
+    'ownerId': 'user_001',
+    'image': 'assets/images/dog01.jpeg',
+    'microchipLocation': 'หลังคอ',
+    'chipDate': null,
+  },
+  {
+    'id': 'pet-002',
+    'chipNumber': '985112300000002',
+    'name': 'มะลิ',
+    'type': 'แมว',
+    'species': 'แมว',
+    'breed': 'เปอร์เซีย',
+    'gender': 'เพศเมีย',
+    'birthDate': null,
+    'ageYears': '1',
+    'weightKg': '3.5',
+    'color': 'ขาว',
+    'traits': 'ขี้อ้อน นอนเก่ง',
+    'ownerId': 'user_001',
+    'image': 'assets/images/cat2.jpeg',
+    'microchipLocation': 'ซ้ายคอ',
+    'chipDate': null,
+  },
+  {
+    'id': 'pet-003',
+    'chipNumber': '985112300000003',
+    'name': 'ดำ',
+    'type': 'สุนัข',
+    'species': 'สุนัข',
+    'breed': 'ไทยหลังอาน',
+    'gender': 'เพศเมีย',
+    'birthDate': null,
+    'ageYears': '3',
+    'weightKg': '18',
+    'color': 'ดำ',
+    'traits': 'เฝ้าบ้านเก่ง สุภาพ',
+    'ownerId': 'user_001',
+    'image': 'assets/images/dog03.jpeg',
+    'microchipLocation': 'หลังไหล่ขวา',
+    'chipDate': null,
+  },
+];
+
+
+List<Map<String, dynamic>> mockAppointments = [
+  {
+    'id': 'appointment-001',
+    'petId': 'pet-001',
+    'service': 'ฉีดวัคซีน',
+    'date': '2026-08-12T09:00:00',
+    'time': '09.00 น.',
+    'status': 'ยืนยันนัดแล้ว',
+    'detail': 'วัคซีนรวมประจำปี จุดบริการเขตจตุจักร',
+  },
+  {
+    'id': 'appointment-002',
+    'petId': 'pet-002',
+    'service': 'ทำหมัน',
+    'date': '2026-08-28T14:00:00',
+    'time': '14.00 น.',
+    'status': 'รอเข้ารับบริการ',
+    'detail': 'ตรวจความพร้อมก่อนทำหมันที่คลินิกสัตวแพทย์ กทม.',
+  },
+];
+
+List<Map<String, dynamic>> mockNotifications = [];
+
+List<Map<String, dynamic>> mockReports = [];
+
+List<Map<String, dynamic>> mockLostPets = mockLostPetReports;
+
+List<Map<String, dynamic>> mockAdoptionPets = mockAdoptionPetCatalog;
+
+final List<Map<String, dynamic>> mockLostPetCategories = [
+  {'id': 'all', 'label': 'ทั้งหมด', 'icon': 'assets/icons/pets.png'},
+  {'id': 'สุนัข', 'label': 'สุนัข', 'icon': 'assets/images/dog.png'},
+  {'id': 'แมว', 'label': 'แมว', 'icon': 'assets/images/cat.png'},
+];
+
+final List<String> mockHomeBanners = [
+  'assets/images/banner.png',
+  'assets/images/banner2.png',
+];
+
+final List<Map<String, dynamic>> mockHomeServiceCategories = [
+  {'id': '1', 'title': 'จดทะเบียน', 'image': 'assets/images/category_1.jpg'},
+  {'id': '2', 'title': 'ฉีดวัคซีน', 'image': 'assets/images/category_2.jpg'},
+  {'id': '3', 'title': 'ทำหมัน', 'image': 'assets/images/category_3.jpg'},
+  {'id': '4', 'title': 'ตรวจสอบ', 'image': 'assets/images/pet_verify.png'},
+  {'id': '5', 'title': 'แจ้งเหตุ', 'image': 'assets/images/category_5.png'},
+  {
+    'id': '6',
+    'title': 'เฝ้าระวังโรคสัตว์สู่คน',
+    'image': 'assets/images/zoon.jpeg',
+  },
+  {
+    'id': '7',
+    'title': 'Pet Friendly',
+    'image': 'assets/images/petparkmain.jpeg',
+  },
+  {'id': '8', 'title': 'รับเลี้ยง', 'image': 'assets/images/adoption.jpeg'},
+  {'id': '9', 'title': 'ตามหาสัตว์', 'image': 'assets/images/lostfound.jpg'},
+  {'id': '10', 'title': 'คลินิกใกล้ฉัน', 'image': 'assets/images/clinic.jpeg'},
+];
+
+final List<Map<String, dynamic>> mockWelfareItems = [
+  {
+    'id': 'w1',
+    'title': 'ลดค่ารักษา 30%',
+    'summary': 'สิทธิ์ส่วนลดค่าตรวจและค่ายา สำหรับสัตว์เลี้ยงที่ลงทะเบียนแล้ว',
+    'detail':
+        'สิทธิ์นี้ใช้ได้กับการตรวจรักษาทั่วไป, รับยาตามสั่ง, และค่าบริการเบื้องต้นในเครือข่ายที่ร่วมโครงการ',
+    'provider': 'ศูนย์บริการสัตว์ กทม.',
+    'image': 'assets/images/welfare1.png',
+    'benefit': 'ลด 30%',
+  },
+  {
+    'id': 'w2',
+    'title': 'วัคซีนราคาพิเศษ',
+    'summary': 'โครงการฉีดวัคซีนเชิงรุกในชุมชนและเขตนำร่อง',
+    'detail':
+        'เปิดรับทั้งสุนัขและแมวในพื้นที่ร่วมโครงการ พร้อมหน่วยบริการเคลื่อนที่และการนัดหมายล่วงหน้า',
+    'provider': 'คลินิกเคลื่อนที่',
+    'image': 'assets/images/welfare2.png',
+    'benefit': 'จองคิวได้',
+  },
+  {
+    'id': 'w3',
+    'title': 'อาหารสัตว์ช่วยเหลือ',
+    'summary': 'สนับสนุนอาหารสัตว์สำหรับครอบครัวที่ได้รับผลกระทบ',
+    'detail':
+        'สามารถรับอาหารสนับสนุนได้เดือนละครั้ง ตามเงื่อนไขพื้นที่และจำนวนสัตว์ภายในบ้าน',
+    'provider': 'กองทุนสวัสดิการสัตว์เลี้ยง',
+    'image': 'assets/images/welfare3.png',
+    'benefit': 'รับรายเดือน',
+  },
+  {
+    'id': 'w4',
+    'title': 'บริการรับ-ส่งตรวจ',
+    'summary': 'ช่วยประสานการเคลื่อนย้ายสัตว์ป่วยไปยังจุดบริการ',
+    'detail':
+        'เหมาะสำหรับสัตว์ป่วยหรือสัตว์ที่เดินทางลำบาก มีรถรับส่งในรอบพื้นที่ที่กำหนด',
+    'provider': 'หน่วยออกพื้นที่',
+    'image': 'assets/images/welfare4.png',
+    'benefit': 'รับส่งได้',
+  },
+  {
+    'id': 'w5',
+    'title': 'ตรวจสุขภาพประจำปี',
+    'summary': 'แพ็กเกจตรวจสุขภาพเบื้องต้นสำหรับสุนัขและแมวในครัวเรือน',
+    'detail':
+        'ครอบคลุมการตรวจร่างกายทั่วไป ชั่งน้ำหนัก ประเมินภาวะโภชนาการ และให้คำแนะนำการดูแลรายตัว โดยเปิดให้จองตามรอบบริการของเขต',
+    'provider': 'ศูนย์บริการสาธารณสุข กทม.',
+    'image': 'assets/images/welfare5.png',
+    'benefit': 'ตรวจฟรี',
+  },
+  {
+    'id': 'w6',
+    'title': 'ทำหมันราคาพิเศษ',
+    'summary': 'สิทธิ์ช่วยลดค่าใช้จ่ายสำหรับการทำหมันสัตว์เลี้ยง',
+    'detail':
+        'รองรับสัตว์เลี้ยงที่มีสุขภาพพร้อมรับการผ่าตัด เจ้าหน้าที่จะประเมินอายุ น้ำหนัก และเงื่อนไขก่อนยืนยันคิว',
+    'provider': 'คลินิกสัตวแพทย์เครือข่าย',
+    'image': 'assets/images/welfare6.png',
+    'benefit': 'ลดค่าใช้จ่าย',
+  },
+  {
+    'id': 'w7',
+    'title': 'ไมโครชิปและป้ายทะเบียน',
+    'summary': 'สนับสนุนการระบุตัวตนสัตว์เลี้ยงและลดปัญหาสัตว์สูญหาย',
+    'detail':
+        'ให้บริการฝังไมโครชิปหรือออกป้ายประจำตัวสำหรับสัตว์เลี้ยงที่ผ่านการลงทะเบียน ช่วยให้ตามหาเจ้าของได้รวดเร็วขึ้นเมื่อพลัดหลง',
+    'provider': 'ฝ่ายสิ่งแวดล้อมและสุขาภิบาลเขต',
+    'image': 'assets/images/welfare7.png',
+    'benefit': 'ระบุตัวตน',
+  },
+  {
+    'id': 'w8',
+    'title': 'ปรึกษาพฤติกรรมสัตว์',
+    'summary': 'ให้คำแนะนำกรณีสัตว์เครียด ก้าวร้าว หรือปรับตัวกับบ้านใหม่',
+    'detail':
+        'เหมาะสำหรับผู้เลี้ยงที่ต้องการคำแนะนำเรื่องการฝึกพื้นฐาน การลดพฤติกรรมเสี่ยงกัดคน และการดูแลสัตว์ที่เพิ่งรับเลี้ยง',
+    'provider': 'ทีมสัตวแพทย์และอาสาสมัคร',
+    'image': 'assets/images/welfare8.png',
+    'benefit': 'ปรึกษาได้',
+  },
+  {
+    'id': 'w9',
+    'title': 'ช่วยเหลือสัตว์ป่วยฉุกเฉิน',
+    'summary': 'ประสานหน่วยช่วยเหลือเบื้องต้นในกรณีสัตว์บาดเจ็บหรือป่วยหนัก',
+    'detail':
+        'สำหรับกรณีที่สัตว์ต้องได้รับการดูแลเร่งด่วน ระบบจะช่วยส่งข้อมูลให้หน่วยงานหรือคลินิกที่เกี่ยวข้องประเมินและติดต่อกลับ',
+    'provider': 'ศูนย์ประสานงานสัตว์ป่วยฉุกเฉิน',
+    'image': 'assets/images/welfare9.png',
+    'benefit': 'เร่งด่วน',
+  },
+  {
+    'id': 'w10',
+    'title': 'อบรมผู้เลี้ยงมือใหม่',
+    'summary': 'กิจกรรมให้ความรู้เรื่องวัคซีน อาหาร สุขอนามัย และกฎหมายพื้นฐาน',
+    'detail':
+        'เปิดอบรมเป็นรอบสำหรับผู้เลี้ยงรายใหม่หรือผู้รับเลี้ยงสัตว์จากศูนย์พักพิง เน้นการดูแลที่เหมาะสมและความรับผิดชอบต่อชุมชน',
+    'provider': 'สำนักอนามัย กรุงเทพมหานคร',
+    'image': 'assets/images/welfare10.jpg',
+    'benefit': 'อบรมฟรี',
+  },
+];
+
+final List<Map<String, dynamic>> mockAdoptionPetCatalog = [
+  {
+    'id': '1',
+    'name': 'โมจิ',
+    'species': 'สุนัข',
+    'imageAsset': 'assets/images/dog01.jpeg',
+    'breed': 'พันธุ์ทาง',
+    'gender': 'เพศผู้',
+    'ageLabel': '1 ปี',
+    'ageGroup': 'โตเต็มวัย',
+    'size': 'กลาง',
+    'temperament': ['ขี้เล่น', 'เป็นมิตร'],
+    'district': 'บางกะปิ',
+    'history':
+        'ถูกเจ้าของเดิมนำมาฝากไว้ที่ศูนย์เนื่องจากย้ายที่อยู่ มีนิสัยร่าเริง เข้ากับคนง่าย ชอบเล่นบอล',
+    'sterilized': false,
+    'vaccinated': true,
+    'healthNote': '',
+  },
+  {
+    'id': '2',
+    'name': 'บราวนี่',
+    'species': 'สุนัข',
+    'imageAsset': 'assets/images/dog04.jpg',
+    'breed': 'ลาบราดอร์',
+    'gender': 'เพศผู้',
+    'ageLabel': '3 ปี',
+    'ageGroup': 'โตเต็มวัย',
+    'size': 'ใหญ่',
+    'temperament': ['ตัวใหญ่', 'ว่านอนสอนง่าย'],
+    'district': 'บางนา',
+    'history':
+        'เดิมเป็นสุนัขเฝ้าบ้าน เจ้าของเสียชีวิต ญาติจึงนำมาส่งต่อ สุขภาพแข็งแรง ทำหมันและฉีดวัคซีนครบแล้ว',
+    'sterilized': true,
+    'vaccinated': true,
+    'healthNote': '',
+  },
+  {
+    'id': '3',
+    'name': 'จินเจอร์',
+    'species': 'แมว',
+    'imageAsset': 'assets/images/cat07.jpeg',
+    'breed': 'สก็อตติชโฟลด์',
+    'gender': 'เพศเมีย',
+    'ageLabel': '8 เดือน',
+    'ageGroup': 'ลูกสัตว์',
+    'size': 'เล็ก',
+    'temperament': ['ขี้อ้อน', 'ขี้สงสัย'],
+    'district': 'ลาดพร้าว',
+    'history':
+        'พลัดหลงมาตั้งแต่เล็ก เจ้าหน้าที่ดูแลจนแข็งแรงดี ชอบนอนใกล้คนและเข้ากับแมวตัวอื่นได้ดี',
+    'sterilized': false,
+    'vaccinated': false,
+    'healthNote': '',
+  },
+  {
+    'id': '4',
+    'name': 'ส้มโอ',
+    'species': 'แมว',
+    'imageAsset': 'assets/images/cat04.jpeg',
+    'breed': 'พันธุ์ทาง',
+    'gender': 'เพศเมีย',
+    'ageLabel': '2 ปี',
+    'ageGroup': 'โตเต็มวัย',
+    'size': 'เล็ก',
+    'temperament': ['ตัวเล็ก', 'ขี้เล่น'],
+    'district': 'สวนหลวง',
+    'history': 'เกิดจากแม่แมวจรที่ศูนย์ดูแล ทำหมันแล้ว สุขภาพแข็งแรง',
+    'sterilized': true,
+    'vaccinated': true,
+    'healthNote': '',
+  },
+  {
+    'id': '5',
+    'name': 'ทองดี',
+    'species': 'สุนัข',
+    'imageAsset': 'assets/images/dog02.jpeg',
+    'breed': 'ชิบะอินุ',
+    'gender': 'เพศเมีย',
+    'ageLabel': '4 ปี',
+    'ageGroup': 'โตเต็มวัย',
+    'size': 'เล็ก',
+    'temperament': ['ขี้เล่น', 'แอคทีฟ'],
+    'district': 'จตุจักร',
+    'history':
+        'เคยอยู่ในบ้านเดิมที่ไม่สามารถเลี้ยงต่อได้ จึงย้ายมาที่ศูนย์ มีนิสัยซุกซนแต่เข้ากับคนง่าย',
+    'sterilized': false,
+    'vaccinated': true,
+    'healthNote': '',
+  },
+  {
+    'id': '6',
+    'name': 'ลาเต้',
+    'species': 'แมว',
+    'imageAsset': 'assets/images/cat06.jpeg',
+    'breed': 'อเมริกันช็อตแฮร์',
+    'gender': 'เพศผู้',
+    'ageLabel': '1 ปี 4 เดือน',
+    'ageGroup': 'โตเต็มวัย',
+    'size': 'กลาง',
+    'temperament': ['สงบ', 'รักความสะอาด'],
+    'district': 'สวนหลวง',
+    'history':
+        'ได้รับการช่วยเหลือจากพื้นที่ชุมชนและถูกส่งต่อมาดูแลที่ศูนย์ ชอบมองรอบตัวและค่อย ๆ เข้าหาคน',
+    'sterilized': true,
+    'vaccinated': true,
+    'healthNote': '',
+  },
+];
+
+final List<Map<String, dynamic>> mockLostPetReports = [
+  {
+    'id': 'LF100001',
+    'type': 'lost',
+    'species': 'สุนัข',
+    'petName': 'ไอจิ',
+    'mediaPath': 'assets/images/dog01.jpeg',
+    'mediaName': 'dog01.jpeg',
+    'mediaKind': 'image',
+    'colorDescription': 'สีน้ำตาลอ่อน ใส่ปลอกคอสีฟ้า หูซ้ายมีรอยขีดเล็กน้อย',
+    'location': 'ซอยลาดพร้าว 101 เขตบางกะปิ',
+    'daysAgo': 1,
+    'chipId': '985121004512300',
+    'contactName': 'คุณมิ้นท์',
+    'contactPhone': '0891234567',
+    'note': 'เชื่องกับคนคุ้นเคย แต่มักตกใจเสียงดัง',
+    'createdHoursAgo': 27,
+  },
+  {
+    'id': 'LF100002',
+    'type': 'lost',
+    'species': 'แมว',
+    'petName': 'ชูครีม',
+    'mediaPath': 'assets/images/cat07.jpeg',
+    'mediaName': 'cat07.jpeg',
+    'mediaKind': 'image',
+    'colorDescription': 'สีส้มขาว ตาสีเหลือง ปลายหางงอเล็กน้อย',
+    'location': 'หมู่บ้านสัมมากร เขตสวนหลวง',
+    'daysAgo': 3,
+    'chipId': '',
+    'contactName': 'คุณพลอย',
+    'contactPhone': '0812345678',
+    'note': 'ชอบหลบอยู่ใต้รถ และตอบสนองต่อเสียงเขย่าถุงอาหาร',
+    'createdHoursAgo': 76,
+  },
+  {
+    'id': 'LF100003',
+    'type': 'lost',
+    'species': 'สุนัข',
+    'petName': 'โบโบ้',
+    'mediaPath': 'assets/images/dog04.jpg',
+    'mediaName': 'dog04.jpg',
+    'mediaKind': 'image',
+    'colorDescription': 'สีดำล้วน ตัวกลาง สวมปลอกคอสีน้ำเงิน',
+    'location': 'ซอยประชาอุทิศ 24 เขตทุ่งครุ',
+    'hoursAgo': 20,
+    'chipId': '',
+    'contactName': 'คุณต้น',
+    'contactPhone': '0976543210',
+    'note': 'วิ่งตามรถจักรยานยนต์และชอบเล่นกับเด็ก',
+    'createdHoursAgo': 18,
+  },
+  {
+    'id': 'LF100004',
+    'type': 'lost',
+    'species': 'แมว',
+    'petName': 'มังคุด',
+    'mediaPath': 'assets/images/cat04.jpeg',
+    'mediaName': 'cat04.jpeg',
+    'mediaKind': 'image',
+    'colorDescription': 'ลายสลิดเทา ขนฟู มีปลอกคอสีชมพู',
+    'location': 'คอนโดใกล้ BTS อ่อนนุช เขตวัฒนา',
+    'hoursAgo': 53,
+    'chipId': '984000112233445',
+    'contactName': 'คุณฝน',
+    'contactPhone': '0923456789',
+    'note': 'ขี้อาย ไม่ค่อยออกมาหาคน แต่ชอบมองจากที่สูง',
+    'createdHoursAgo': 50,
+  },
+  {
+    'id': 'LF100005',
+    'type': 'lost',
+    'species': 'สุนัข',
+    'petName': 'มะลิ',
+    'mediaPath': 'assets/images/dog02.jpeg',
+    'mediaName': 'dog02.jpeg',
+    'mediaKind': 'image',
+    'colorDescription': 'สีขาวครีม ขนยาวเล็กน้อย ใส่สายจูงสีแดง',
+    'location': 'ริมถนนสุขุมวิท 71 เขตคลองเตย',
+    'hoursAgo': 98,
+    'chipId': '',
+    'contactName': 'คุณนุ่น',
+    'contactPhone': '0865432190',
+    'note': 'ชอบเดินตามคน ใจดี แต่กลัวเสียงรถใหญ่',
+    'createdHoursAgo': 96,
+  },
+];
+
+final List<Map<String, dynamic>> mockPetSpecies = [
+  {'id': 'dog', 'name': 'สุนัข'},
+  {'id': 'cat', 'name': 'แมว'},
+];
+
+final List<Map<String, dynamic>> mockPetGenders = [
+  {'id': 'male', 'name': 'เพศผู้'},
+  {'id': 'female', 'name': 'เพศเมีย'},
+  {'id': 'unknown', 'name': 'ไม่ระบุ'},
+];
+
+final List<Map<String, dynamic>> mockAppointmentTypes = [
+  {'id': 'vaccine', 'name': 'ฉีดวัคซีน'},
+  {'id': 'sterilization', 'name': 'ทำหมัน'},
+  {'id': 'consult', 'name': 'ปรึกษาสัตวแพทย์'},
+];
+
+final List<Map<String, dynamic>> mockNotificationTypes = [
+  {'id': 'registration', 'name': 'จดทะเบียน'},
+  {'id': 'vaccine', 'name': 'จองวัคซีน'},
+  {'id': 'sterilization', 'name': 'จองทำหมัน'},
+  {'id': 'general', 'name': 'อื่นๆ'},
+];
