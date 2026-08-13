@@ -25,6 +25,7 @@ class ReportIncidentPage extends StatelessWidget {
             message:
                 'หน้านี้ใช้เลือกทางเข้าใช้งานก่อนส่งเรื่องหรือเช็กสถานะเรื่องเดิม',
             icon: Icons.info_outline_rounded,
+            showAction: false,
           ),
           _ActionCard(
             icon: Icons.edit_note_rounded,
@@ -75,7 +76,7 @@ class ReportIncidentPage extends StatelessWidget {
           const _FeatureBullet(
             icon: Icons.videocam_rounded,
             iconAsset: appVideoGalleryIconAsset,
-            text: 'แนบวิดีโอจากกล้องหรือคลังในเครื่อง',
+            text: 'แนบวิดีโอจากกล้องหรือคลังในเครื่อง ',
           ),
           const _FeatureBullet(
             icon: Icons.priority_high_rounded,

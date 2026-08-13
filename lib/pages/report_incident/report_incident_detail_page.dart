@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:bkkpet/blank_page/appbar.dart';
+import 'package:bkkpet/blank_page/app_field_styles.dart';
 import 'package:bkkpet/blank_page/incident_input_widgets.dart';
 import 'package:bkkpet/pages/report_incident/report_incident_model.dart';
 import 'package:bkkpet/pages/report_incident/report_incident_storage.dart';
@@ -121,12 +122,9 @@ class _ReportIncidentDetailPageState extends State<ReportIncidentDetailPage> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: selectedStatus,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: AppColors.greyscale_25,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                    decoration: buildAppInputDecoration(
+                      hintText: 'เลือกสถานะ',
+                      fillColor: Colors.white,
                     ),
                     items:
                         options
@@ -145,13 +143,9 @@ class _ReportIncidentDetailPageState extends State<ReportIncidentDetailPage> {
                   TextField(
                     controller: noteCtrl,
                     maxLines: 3,
-                    decoration: InputDecoration(
+                    decoration: buildAppInputDecoration(
                       hintText: 'ใส่รายละเอียดผลการดำเนินงาน',
-                      filled: true,
-                      fillColor: AppColors.greyscale_25,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      fillColor: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 14),

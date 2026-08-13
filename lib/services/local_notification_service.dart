@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class LocalNotificationService {
@@ -9,14 +8,11 @@ class LocalNotificationService {
 
   static bool _initialized = false;
   static bool _riskAreaWelcomeShown = false;
-  static Uint8List? _largeIconBytes;
 
   static Future<void> initialize() async {
     if (_initialized) return;
 
-    const android = AndroidInitializationSettings(
-      'notification_small_icon',
-    );
+    const android = AndroidInitializationSettings('notification_small_icon');
     const darwin = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -49,7 +45,6 @@ class LocalNotificationService {
     String payload = 'risk-area',
   }) async {
     await initialize();
-    final largeIcon = await _getLargeIcon();
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
         'risk_area_alerts_v2',
@@ -58,7 +53,6 @@ class LocalNotificationService {
         importance: Importance.high,
         priority: Priority.high,
         icon: 'notification_small_icon',
-        largeIcon: ByteArrayAndroidBitmap(largeIcon),
       ),
       iOS: const DarwinNotificationDetails(
         presentAlert: true,
@@ -96,15 +90,5 @@ class LocalNotificationService {
       body:
           'ขณะนี้มีการเฝ้าระวังโรคสัตว์สู่คนและสัตว์ป่วยผิดปกติในพื้นที่ จตุจักร',
     );
-  }
-
-  static Future<Uint8List> _getLargeIcon() async {
-    final cached = _largeIconBytes;
-    if (cached != null) return cached;
-
-    final data = await rootBundle.load('assets/icons/iconapp.png');
-    final bytes = data.buffer.asUint8List();
-    _largeIconBytes = bytes;
-    return bytes;
   }
 }

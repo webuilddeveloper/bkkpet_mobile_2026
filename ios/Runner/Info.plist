@@ -69,6 +69,9 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>แอปต้องการเข้าถึงตำแหน่งของคุณเพื่อระบุตำแหน่งสำหรับการแจ้งเหตุและให้บริการที่เกี่ยวข้องกับตำแหน่ง</string>
 
+	<key>GMSApiKey</key>
+	<string>AIzaSyAi7NX5bzH7lLGUkd1wNhmxpQJ-3nirh_s</string>
+
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 

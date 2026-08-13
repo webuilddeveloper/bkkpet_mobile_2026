@@ -170,16 +170,18 @@ class _AdoptionOwnedPetDetailPageState
                 galleryLabel: 'เพิ่มรูป',
                 cameraVideoLabel: 'ถ่ายวิดีโอ',
                 galleryVideoLabel: 'เพิ่มวิดีโอ',
+                showPreview: false,
                 initialValue: _media,
                 onChanged: (picked) => setState(() => _media = picked),
               ),
-              if (_media != null) ...[
-                const SizedBox(height: 12),
-                _SelectedMediaPreview(
-                  media: _media!,
-                  onClear: () => setState(() => _media = null),
-                ),
-              ],
+              const SizedBox(height: 12),
+              SharedPickedMediaPreview(
+                media: _media,
+                aspectRatio: 16 / 10,
+                borderRadius: 16,
+                emptyMessage: 'ยังไม่มีรูปหรือวิดีโอแนบ',
+              ),
+              SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -275,100 +277,6 @@ class _AdoptionOwnedPetDetailPageState
           icon: Icons.send_rounded,
           onPressed: _saving ? null : _submit,
         ),
-      ),
-    );
-  }
-}
-
-class _SelectedMediaPreview extends StatelessWidget {
-  const _SelectedMediaPreview({required this.media, required this.onClear});
-
-  final SharedPickedMedia media;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.greyscale_200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AspectRatio(
-            aspectRatio: 1.55,
-            child:
-                media.isImage
-                    ? Image.file(
-                      File(media.file.path),
-                      fit: BoxFit.cover,
-                      errorBuilder:
-                          (_, __, ___) => Container(
-                            color: AppColors.greyscale_50,
-                            alignment: Alignment.center,
-                            child: Icon(
-                              Icons.image_not_supported_outlined,
-                              color: AppColors.greyscale_300,
-                            ),
-                          ),
-                    )
-                    : Container(
-                      color: AppColors.greyscale_50,
-                      alignment: Alignment.center,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.play_circle_fill_rounded,
-                            size: 44,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'แนบวิดีโอ',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.greyscale_400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Icon(
-                  media.isImage ? Icons.photo_rounded : Icons.videocam_rounded,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    media.file.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.greyscale_800,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: onClear,
-                  child: Text('ลบ', style: TextStyle(color: AppColors.primary)),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

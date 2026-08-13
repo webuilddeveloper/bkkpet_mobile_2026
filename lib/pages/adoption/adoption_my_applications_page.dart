@@ -54,7 +54,7 @@ class _AdoptionMyApplicationsPageState
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               children: [
-                const IncidentNoticeBanner(
+              const IncidentNoticeBanner(
                   title: 'เปิดดูสถานะได้ทุกเมื่อ',
                   message:
                       'แตะรายการเพื่อกลับไปดูสถานะล่าสุด และลองเปลี่ยนสถานะทดสอบได้ในหน้ารายละเอียด',
@@ -113,7 +113,7 @@ class _AdoptionMyApplicationsPageState
                                 child: AdoptionPetAvatarPlaceholder(
                                   species: app.pet.species,
                                   imageAsset: app.pet.imageAsset,
-                                  height: 64,
+                                  height: 84,
                                   borderRadius: 14,
                                 ),
                               ),

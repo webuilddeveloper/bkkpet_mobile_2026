@@ -1,3 +1,4 @@
+import 'package:bkkpet/blank_page/app_field_styles.dart';
 import 'package:bkkpet/style_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -86,25 +87,7 @@ class AdoptionFormField extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 6, left: 2),
-            child: RichText(
-              text: TextSpan(
-                text: label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.greyscale_900,
-                ),
-                children:
-                    required
-                        ? const [
-                          TextSpan(
-                            text: ' *',
-                            style: TextStyle(color: Colors.redAccent),
-                          ),
-                        ]
-                        : null,
-              ),
-            ),
+            child: buildAppFieldLabel(label, required: required),
           ),
           TextFormField(
             controller: controller,
@@ -120,40 +103,23 @@ class AdoptionFormField extends StatelessWidget {
                             ? 'กรุณากรอกข้อมูล'
                             : null
                     : null),
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: hint,
-              hintStyle: TextStyle(
-                fontSize: 13,
-                color: AppColors.greyscale_300,
-              ),
-              prefixIcon:
-                  icon != null
-                      ? Icon(icon, size: 18, color: AppColors.greyscale_400)
-                      : null,
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 14,
-                horizontal: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.greyscale_200),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.greyscale_200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.primary, width: 1.5),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.redAccent),
-              ),
-            ),
+            decoration:
+                buildAppInputDecoration(
+                  hintText: hint,
+                  prefixIcon:
+                      icon != null
+                          ? Icon(
+                            icon,
+                            size: 18,
+                            color: AppColors.greyscale_400,
+                          )
+                          : null,
+                ).copyWith(
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.redAccent),
+                  ),
+                ),
           ),
         ],
       ),
@@ -184,14 +150,7 @@ class AdoptionDropdown extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 6, left: 2),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.greyscale_900,
-              ),
-            ),
+            child: buildAppFieldLabel(label),
           ),
           DropdownButtonFormField<String>(
             initialValue: value,
@@ -204,27 +163,7 @@ class AdoptionDropdown extends StatelessWidget {
             },
             isDense: true,
             style: TextStyle(fontSize: 14, color: AppColors.greyscale_900),
-            decoration: InputDecoration(
-              isDense: true,
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 14,
-                horizontal: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.greyscale_200),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.greyscale_200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.primary, width: 1.5),
-              ),
-            ),
+            decoration: buildAppInputDecoration(hintText: label),
           ),
         ],
       ),

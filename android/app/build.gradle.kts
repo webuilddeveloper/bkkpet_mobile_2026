@@ -5,6 +5,8 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 android {
     namespace = "td.webuild.bkkpet"
     compileSdk = flutter.compileSdkVersion
@@ -16,8 +18,10 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
     }
 
     defaultConfig {
@@ -25,10 +29,13 @@ android {
         applicationId = "td.webuild.bkkpet"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["googleMapsApiKey"] =
+            (project.findProperty("GOOGLE_MAPS_API_KEY") as String?)
+                ?: "AIzaSyCchlcVGD2WBugWYLBi_G4WYd_RDPT1Svk"
     }
 
     buildTypes {

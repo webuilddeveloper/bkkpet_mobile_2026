@@ -40,15 +40,21 @@ class IncidentNoticeBanner extends StatelessWidget {
     required this.title,
     required this.message,
     this.icon = Icons.history_rounded,
+    this.showAction = false,
+    this.onTap,
+    this.actionLabel,
   });
 
   final String title;
   final String message;
   final IconData icon;
+  final bool showAction;
+  final VoidCallback? onTap;
+  final String? actionLabel;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final content = Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -85,13 +91,21 @@ class IncidentNoticeBanner extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            size: 18,
-            color: AppColors.primarySecondary,
-          ),
+          if (showAction)
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: AppColors.primarySecondary,
+            ),
         ],
       ),
+    );
+
+    if (!showAction || onTap == null) return content;
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: content,
     );
   }
 }
@@ -329,6 +343,7 @@ class SharedMediaPickerField extends StatefulWidget {
     this.galleryLabel = 'เลือกจากคลังภาพ',
     this.cameraVideoLabel = 'ถ่ายวิดีโอ',
     this.galleryVideoLabel = 'เพิ่มวิดีโอ',
+    this.showPreview = true,
   });
 
   final String title;
@@ -344,6 +359,7 @@ class SharedMediaPickerField extends StatefulWidget {
   final String galleryLabel;
   final String cameraVideoLabel;
   final String galleryVideoLabel;
+  final bool showPreview;
 
   @override
   State<SharedMediaPickerField> createState() => _SharedMediaPickerFieldState();
@@ -477,56 +493,10 @@ class _SharedMediaPickerFieldState extends State<SharedMediaPickerField> {
             ],
           ),
           const SizedBox(height: 12),
-          if (hasValue && _value!.isImage)
-            FutureBuilder<Uint8List>(
-              future: _value!.file.readAsBytes(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: Image.memory(snapshot.data!, fit: BoxFit.cover),
-                    ),
-                  );
-                }
-                return Container(
-                  height: 110,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.greyscale_50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const CircularProgressIndicator(strokeWidth: 2),
-                );
-              },
-            )
-          else if (hasValue)
-            Container(
-              height: 110,
-              decoration: BoxDecoration(
-                color: AppColors.greyscale_50,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const AppMediaIcon(
-                    asset: appVideoGalleryIconAsset,
-                    fallbackIcon: Icons.videocam_rounded,
-                    size: 36,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'แนบวิดีโอแล้ว',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.greyscale_800,
-                    ),
-                  ),
-                ],
-              ),
+          if (hasValue && widget.showPreview)
+            SharedPickedMediaPreview(
+              media: _value!,
+              aspectRatio: 16 / 9,
             ),
           const SizedBox(height: 12),
           SizedBox(
@@ -562,6 +532,180 @@ class _SharedMediaPickerFieldState extends State<SharedMediaPickerField> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SharedPickedMediaPreview extends StatelessWidget {
+  const SharedPickedMediaPreview({
+    super.key,
+    required this.media,
+    this.aspectRatio = 16 / 9,
+    this.borderRadius = 12,
+    this.showName = true,
+    this.emptyMessage = 'ยังไม่มีสื่อแนบ',
+  });
+
+  final SharedPickedMedia? media;
+  final double aspectRatio;
+  final double borderRadius;
+  final bool showName;
+  final String emptyMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(borderRadius);
+    final mediaValue = media;
+    if (mediaValue == null) {
+      return Container(
+        constraints: BoxConstraints(minHeight: 120),
+        decoration: BoxDecoration(
+          color: AppColors.greyscale_50,
+          borderRadius: radius,
+          border: Border.all(color: AppColors.greyscale_200),
+        ),
+        child: _SharedMediaEmptyState(message: emptyMessage),
+      );
+    }
+
+    final preview = mediaValue.isImage
+        ? FutureBuilder<Uint8List>(
+            future: mediaValue.file.readAsBytes(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return Image.memory(snapshot.data!, fit: BoxFit.cover);
+              }
+              return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+            },
+          )
+        : Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF24332E), Color(0xFF0F1815)],
+              ),
+            ),
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AppMediaIcon(
+                    asset: appVideoGalleryIconAsset,
+                    fallbackIcon: Icons.videocam_rounded,
+                    size: 42,
+                    color: Colors.white,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'ตัวอย่างวิดีโอ',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+    return ClipRRect(
+      borderRadius: radius,
+      child: AspectRatio(
+        aspectRatio: aspectRatio,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Container(color: AppColors.greyscale_50, child: preview),
+            if (showName)
+              Positioned(
+                left: 10,
+                right: 10,
+                bottom: 10,
+                child: _MediaNameChip(
+                  icon: mediaValue.isImage
+                      ? Icons.photo_rounded
+                      : Icons.videocam_rounded,
+                  text: mediaValue.file.name,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SharedMediaEmptyState extends StatelessWidget {
+  const _SharedMediaEmptyState({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const AppMediaIcon(
+              asset: appGalleryIconAsset,
+              fallbackIcon: Icons.photo_library_outlined,
+              size: 34,
+              color: AppColors.greyscale_300,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.greyscale_400,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MediaNameChip extends StatelessWidget {
+  const _MediaNameChip({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.white),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),

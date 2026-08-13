@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:bkkpet/blank_page/appbar.dart';
+import 'package:bkkpet/blank_page/app_field_styles.dart';
 import 'package:bkkpet/services/mock_user_store.dart';
 import 'package:bkkpet/style_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfilePetsPage extends StatefulWidget {
   const ProfilePetsPage({super.key});
@@ -18,6 +22,22 @@ class _ProfilePetsPageState extends State<ProfilePetsPage> {
     final traitsCtrl = TextEditingController(text: pet.traits);
     var species = pet.species;
     var gender = pet.gender;
+    var imagePath = pet.image;
+    var imageIsFile = File(pet.image).existsSync();
+    final picker = ImagePicker();
+
+    Future<void> pickImage(StateSetter setSheetState) async {
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 90,
+        maxWidth: 1600,
+      );
+      if (picked == null) return;
+      setSheetState(() {
+        imagePath = picked.path;
+        imageIsFile = true;
+      });
+    }
 
     await showModalBottomSheet<void>(
       context: context,
@@ -69,6 +89,69 @@ class _ProfilePetsPageState extends State<ProfilePetsPage> {
                               : pet.microchipNumber,
                     ),
                     const SizedBox(height: 10),
+                    Text(
+                      'รูปสัตว์เลี้ยง',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.greyscale_900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 10,
+                        child:
+                            imageIsFile
+                                ? Image.file(
+                                  File(imagePath),
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (_, __, ___) => Container(
+                                        color: AppColors.greyscale_50,
+                                        alignment: Alignment.center,
+                                        child: Icon(
+                                          Icons.image_not_supported_outlined,
+                                          color: AppColors.greyscale_300,
+                                        ),
+                                      ),
+                                )
+                                : Image.asset(
+                                  imagePath,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (_, __, ___) => Container(
+                                        color: AppColors.greyscale_50,
+                                        alignment: Alignment.center,
+                                        child: Icon(
+                                          Icons.pets_rounded,
+                                          color: AppColors.greyscale_300,
+                                        ),
+                                      ),
+                                ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: OutlinedButton.icon(
+                        onPressed: () => pickImage(setSheetState),
+                        icon: const Icon(Icons.photo_library_outlined, size: 18),
+                        label: const Text('เปลี่ยนรูปสัตว์เลี้ยง'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: BorderSide(
+                            color: AppColors.primary.withValues(alpha: 0.35),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     _EditField(label: 'ชื่อสัตว์เลี้ยง', controller: nameCtrl),
                     const SizedBox(height: 10),
                     Row(
@@ -115,7 +198,7 @@ class _ProfilePetsPageState extends State<ProfilePetsPage> {
                               id: pet.id,
                               name: nameCtrl.text.trim(),
                               species: species,
-                              image: pet.image,
+                              image: imagePath,
                               gender: gender,
                               breed: breedCtrl.text.trim(),
                               ageYears: pet.ageYears,
@@ -237,6 +320,7 @@ class _PetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageFile = File(image);
     return InkWell(
       borderRadius: BorderRadius.circular(70),
       onTap: onTap,
@@ -251,12 +335,20 @@ class _PetCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(35),
-              child: Image.asset(
-                image,
-                width: 70,
-                height: 70,
-                fit: BoxFit.cover,
-              ),
+              child:
+                  imageFile.existsSync()
+                      ? Image.file(
+                        imageFile,
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                      )
+                      : Image.asset(
+                        image,
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                      ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -323,18 +415,10 @@ class _EditField extends StatelessWidget {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
+      decoration: buildAppInputDecoration(
+        hintText: label,
         fillColor: AppColors.greyscale_50,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.greyscale_200),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.greyscale_200),
-        ),
+        radius: 14,
       ),
     );
   }
@@ -349,14 +433,10 @@ class _ReadonlyField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InputDecorator(
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
+      decoration: buildAppInputDecoration(
+        hintText: label,
         fillColor: AppColors.greyscale_50,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.greyscale_200),
-        ),
+        radius: 14,
       ),
       child: Text(value),
     );
@@ -387,18 +467,10 @@ class _ChoiceField extends StatelessWidget {
       onChanged: (value) {
         if (value != null) onChanged(value);
       },
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
+      decoration: buildAppInputDecoration(
+        hintText: label,
         fillColor: AppColors.greyscale_50,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.greyscale_200),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.greyscale_200),
-        ),
+        radius: 14,
       ),
     );
   }

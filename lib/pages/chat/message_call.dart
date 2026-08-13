@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element_parameter
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -316,7 +318,6 @@ class _SelfPreview extends StatelessWidget {
     );
   }
 }
-
 
 /// ปุ่มควบคุมกล้อง/ไมค์ — มีลูกเล่นกดยุบตัวและสลับไอคอนแบบนุ่ม ๆ
 class _CallControlButton extends StatefulWidget {

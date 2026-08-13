@@ -1,4 +1,5 @@
 import 'package:bkkpet/blank_page/custom_textfield.dart';
+import 'package:bkkpet/blank_page/app_field_styles.dart';
 import 'package:bkkpet/style_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -122,25 +123,7 @@ class _SharedSearchDropdownFieldState extends State<SharedSearchDropdownField> {
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 6, left: 2),
-            child: RichText(
-              text: TextSpan(
-                text: widget.label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.greyscale_900,
-                ),
-                children:
-                    widget.required
-                        ? const [
-                          TextSpan(
-                            text: ' *',
-                            style: TextStyle(color: Colors.redAccent),
-                          ),
-                        ]
-                        : null,
-              ),
-            ),
+            child: buildAppFieldLabel(widget.label, required: widget.required),
           ),
           InkWell(
             borderRadius: BorderRadius.circular(12),

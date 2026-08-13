@@ -1,10 +1,13 @@
 import 'package:bkkpet/blank_page/appbar.dart';
+import 'package:bkkpet/blank_page/app_field_styles.dart';
 import 'package:bkkpet/blank_page/custom_dialog.dart';
+import 'package:bkkpet/blank_page/shared_search_dropdown.dart';
 import 'package:bkkpet/blank_page/shared_thai_date_picker.dart';
 import 'package:bkkpet/pages/vaccine/vaccine_booking_detail_page.dart';
 import 'package:bkkpet/pages/vaccine/vaccine_booking_history_page.dart';
 import 'package:bkkpet/pages/vaccine/vaccine_booking_model.dart';
 import 'package:bkkpet/pages/vaccine/vaccine_booking_storage.dart';
+import 'package:bkkpet/services/mock_reference_data.dart';
 import 'package:bkkpet/services/notification_storage.dart';
 import 'package:bkkpet/services/mock_user_store.dart';
 import 'package:bkkpet/style_theme.dart';
@@ -1109,25 +1112,7 @@ class _FormField extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 6, left: 2),
-            child: RichText(
-              text: TextSpan(
-                text: label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.greyscale_900,
-                ),
-                children:
-                    required
-                        ? const [
-                          TextSpan(
-                            text: ' *',
-                            style: TextStyle(color: Colors.redAccent),
-                          ),
-                        ]
-                        : null,
-              ),
-            ),
+            child: buildAppFieldLabel(label, required: required),
           ),
           TextFormField(
             controller: controller,
@@ -1142,40 +1127,19 @@ class _FormField extends StatelessWidget {
                             ? 'กรุณากรอกข้อมูล'
                             : null
                     : null,
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: hint,
-              hintStyle: TextStyle(
-                fontSize: 13,
-                color: AppColors.greyscale_300,
-              ),
-              prefixIcon:
-                  icon != null
-                      ? Icon(icon, size: 18, color: AppColors.greyscale_400)
-                      : null,
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 14,
-                horizontal: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.greyscale_200),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.greyscale_200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.primary, width: 1.5),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.redAccent),
-              ),
-            ),
+            decoration:
+                buildAppInputDecoration(
+                  hintText: hint,
+                  prefixIcon:
+                      icon != null
+                          ? Icon(icon, size: 18, color: AppColors.greyscale_400)
+                          : null,
+                ).copyWith(
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.redAccent),
+                  ),
+                ),
           ),
         ],
       ),
@@ -1205,14 +1169,7 @@ class _FormDropdown extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 6, left: 2),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.greyscale_900,
-              ),
-            ),
+            child: buildAppFieldLabel(label),
           ),
           DropdownButtonFormField<String>(
             initialValue: value,
@@ -1225,27 +1182,7 @@ class _FormDropdown extends StatelessWidget {
             },
             isDense: true,
             style: TextStyle(fontSize: 14, color: AppColors.greyscale_900),
-            decoration: InputDecoration(
-              isDense: true,
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 14,
-                horizontal: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.greyscale_200),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.greyscale_200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.primary, width: 1.5),
-              ),
-            ),
+            decoration: buildAppInputDecoration(hintText: label),
           ),
         ],
       ),
@@ -1438,11 +1375,27 @@ class _ManualPetCardState extends State<_ManualPetCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _FormDropdown(
+                child: SharedSearchDropdownField(
                   label: 'ชนิด',
-                  value: pet.species,
+                  valueText: pet.species,
                   options: const ['สุนัข', 'แมว'],
-                  onChanged: (v) => setState(() => pet.species = v),
+                  hintText: 'เลือกชนิดสัตว์',
+                  searchHintText: 'ค้นหาชนิดสัตว์',
+                  onSelected: (v) {
+                    setState(() {
+                      pet.species = v;
+                      final breed = pet.breedCtrl.text.trim();
+                      if (breed.isNotEmpty && breed != 'อื่นๆ') {
+                        final options =
+                            v == 'แมว'
+                                ? MockReferenceData.catBreeds
+                                : MockReferenceData.dogBreeds;
+                        if (!options.contains(breed)) {
+                          pet.breedCtrl.clear();
+                        }
+                      }
+                    });
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -1456,10 +1409,17 @@ class _ManualPetCardState extends State<_ManualPetCard> {
               ),
             ],
           ),
-          _FormField(
-            label: 'พันธุ์ (ถ้าทราบ)',
-            controller: pet.breedCtrl,
-            hint: 'เช่น พันธุ์ทาง, พุดเดิ้ล, เปอร์เซีย',
+          SharedSearchDropdownField(
+            label: 'พันธุ์',
+            valueText: pet.breedCtrl.text,
+            options:
+                pet.species == 'แมว'
+                    ? MockReferenceData.catBreeds
+                    : MockReferenceData.dogBreeds,
+            hintText: 'เลือกหรือพิมพ์พันธุ์',
+            searchHintText: 'ค้นหาพันธุ์',
+            allowCustomInput: true,
+            onSelected: (v) => setState(() => pet.breedCtrl.text = v),
           ),
         ],
       ),
@@ -1737,8 +1697,8 @@ class _TimeSlotChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: 10,
+      runSpacing: 10,
       children:
           slotRemaining.entries.map((entry) {
             final slot = entry.key;
@@ -1746,19 +1706,20 @@ class _TimeSlotChips extends StatelessWidget {
             final isFull = remaining <= 0;
             final isSelected = slot == selected;
             return InkWell(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               onTap: isFull ? null : () => onSelect(slot),
               child: Container(
+                constraints: const BoxConstraints(minWidth: 112),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 9,
+                  horizontal: 14,
+                  vertical: 12,
                 ),
                 decoration: BoxDecoration(
                   color:
                       isFull
                           ? AppColors.greyscale_200.withOpacity(0.4)
                           : (isSelected ? AppColors.primary : Colors.white),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color:
                         isFull
@@ -1774,7 +1735,7 @@ class _TimeSlotChips extends StatelessWidget {
                     Text(
                       slot,
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color:
                             isFull
@@ -1785,6 +1746,24 @@ class _TimeSlotChips extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
+                    Text(
+                      isFull
+                          ? 'Unavailable'
+                          : isSelected
+                          ? 'Selected'
+                          : 'Available',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color:
+                            isFull
+                                ? AppColors.greyscale_300
+                                : (isSelected
+                                    ? Colors.white.withOpacity(0.9)
+                                    : AppColors.primarySecondary),
+                      ),
+                    ),
+                    const SizedBox(height: 1),
                     Text(
                       isFull ? 'เต็ม' : 'เหลือ $remaining คิว',
                       style: TextStyle(

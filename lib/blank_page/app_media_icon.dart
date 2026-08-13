@@ -2,9 +2,9 @@ import 'package:bkkpet/style_theme.dart';
 import 'package:flutter/material.dart';
 
 const String appCameraIconAsset = 'assets/images/camera.png';
-const String appCameraVideoIconAsset = 'assets/images/camera-movie.png';
+const String appCameraVideoIconAsset = 'assets/images/video.png';
 const String appGalleryIconAsset = 'assets/icons/gallery.png';
-const String appVideoGalleryIconAsset = 'assets/images/screen-play.png';
+const String appVideoGalleryIconAsset = 'assets/images/video_add.png';
 
 class AppMediaIcon extends StatelessWidget {
   const AppMediaIcon({

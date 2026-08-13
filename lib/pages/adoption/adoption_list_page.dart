@@ -18,7 +18,7 @@ class AdoptionListPage extends StatefulWidget {
 class _AdoptionListPageState extends State<AdoptionListPage> {
   final _searchCtrl = TextEditingController();
 
-  String _category = 'สุนัข'; // 'สุนัข' | 'แมว'
+  String _category = 'all'; // all | สุนัข | แมว
 
   // ---- ตัวกรอง (เดิมอยู่แถวบน ย้ายไปรวมในชีทตัวกรอง) ----
   String? _district;
@@ -33,14 +33,14 @@ class _AdoptionListPageState extends State<AdoptionListPage> {
 
   List<String> get _breedOptions =>
       _allPets
-          .where((p) => p.species == _category)
+          .where((p) => _category == 'all' || p.species == _category)
           .map((p) => p.breed)
           .toSet()
           .toList();
 
   List<AdoptionPet> get _filteredPets {
     return _allPets.where((p) {
-      if (p.species != _category) return false;
+      if (_category != 'all' && p.species != _category) return false;
       final q = _searchCtrl.text.trim();
       if (q.isNotEmpty &&
           !p.name.contains(q) &&
@@ -223,24 +223,18 @@ class _AdoptionListPageState extends State<AdoptionListPage> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
-                    children: [
-                      Expanded(
-                        child: _CategoryTab(
-                          label: 'สุนัข',
-                          icon: 'assets/images/dog.png',
-                          selected: _category == 'สุนัข',
-                          onTap: () => setState(() => _category = 'สุนัข'),
-                        ),
-                      ),
-                      Expanded(
-                        child: _CategoryTab(
-                          label: 'แมว',
-                          icon: 'assets/images/cat.png',
-                          selected: _category == 'แมว',
-                          onTap: () => setState(() => _category = 'แมว'),
-                        ),
-                      ),
-                    ],
+                    children:
+                        mockLostPetCategories.map((category) {
+                          final id = category['id'] as String;
+                          return Expanded(
+                            child: _CategoryTab(
+                              label: category['label'] as String,
+                              icon: category['icon'] as String,
+                              selected: _category == id,
+                              onTap: () => setState(() => _category = id),
+                            ),
+                          );
+                        }).toList(),
                   ),
                 ),
                 const SizedBox(height: 12),

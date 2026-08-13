@@ -1,4 +1,5 @@
 import 'package:bkkpet/blank_page/appbar.dart';
+import 'package:bkkpet/blank_page/app_field_styles.dart';
 import 'package:bkkpet/blank_page/app_media_icon.dart';
 import 'package:bkkpet/blank_page/custom_dialog.dart';
 import 'package:bkkpet/blank_page/incident_input_widgets.dart';
@@ -126,25 +127,10 @@ class _ReportIncidentFormPageState extends State<ReportIncidentFormPage> {
     required String hintText,
     Widget? prefixIcon,
   }) {
-    return InputDecoration(
+    return buildAppInputDecoration(
       hintText: hintText,
-      hintStyle: TextStyle(color: AppColors.greyscale_300, fontSize: 13),
       prefixIcon: prefixIcon,
-      filled: true,
-      fillColor: AppColors.greyscale_25,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppColors.greyscale_200),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppColors.greyscale_200),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-      ),
+      fillColor: Colors.white,
     );
   }
 

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:bkkpet/blank_page/appbar.dart';
 import 'package:bkkpet/mock_data.dart';
 import 'package:bkkpet/pages/adoption/adoption_list_page.dart';
@@ -9,7 +12,10 @@ import 'package:bkkpet/pages/sterilization/sterilization_page.dart';
 import 'package:bkkpet/pages/vaccine/vaccine_page.dart';
 import 'package:bkkpet/services/local_notification_service.dart';
 import 'package:bkkpet/style_theme.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HomeServicesAllPage extends StatefulWidget {
@@ -30,7 +36,15 @@ class _HomeServicesAllPageState extends State<HomeServicesAllPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(LocalNotificationService.showChatuchakRiskWelcomeOnce);
+    Future.microtask(_showWelcomeNotificationSafely);
+  }
+
+  Future<void> _showWelcomeNotificationSafely() async {
+    try {
+      await LocalNotificationService.showChatuchakRiskWelcomeOnce();
+    } catch (_) {
+      // Notification permission or plugin setup should never block navigation.
+    }
   }
 
   @override
@@ -142,11 +156,6 @@ class _HomeServicesAllPageState extends State<HomeServicesAllPage> {
         );
         break;
       case '6':
-        LocalNotificationService.showRiskAreaAlert(
-          title: 'เฝ้าระวังโรคสัตว์สู่คน',
-          body:
-              'เขตจตุจักรมีการแจ้งสัตว์ป่วยผิดปกติ โปรดหลีกเลี่ยงการสัมผัสและติดตามประกาศพื้นที่เสี่ยง',
-        );
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const ZoonoticDiseasePage()),
@@ -271,110 +280,332 @@ class _ServiceGridItem extends StatelessWidget {
   }
 }
 
+enum _SurveillancePageMode { overview }
+
+enum _RiskLevel { high, medium, watch }
+
+enum _SurveillanceFilter { all, high, medium, watch }
+
 class ZoonoticDiseasePage extends StatelessWidget {
   const ZoonoticDiseasePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final hotspots = <_HotspotPoint>[
-      const _HotspotPoint(
-        name: 'จุดแจ้งสัตว์ป่วยผิดปกติ',
-        area: 'แขวงจอมพล เขตจตุจักร',
-        severity: 'สูง',
-        position: Alignment(-0.32, -0.15),
-      ),
-      const _HotspotPoint(
-        name: 'จุดเฝ้าระวังภาคสนาม',
-        area: 'แขวงลาดยาว เขตจตุจักร',
-        severity: 'ปานกลาง',
-        position: Alignment(0.24, 0.18),
-      ),
-      const _HotspotPoint(
-        name: 'รายงานสัตว์ตายผิดปกติ',
-        area: 'แนวรัศมี 5 กม.',
-        severity: 'ต้องติดตาม',
-        position: Alignment(0.02, -0.38),
-      ),
-    ];
+    return const _SurveillancePage(mode: _SurveillancePageMode.overview);
+  }
+}
+
+class _SurveillancePage extends StatefulWidget {
+  const _SurveillancePage({required this.mode});
+
+  final _SurveillancePageMode mode;
+
+  @override
+  State<_SurveillancePage> createState() => _SurveillancePageState();
+}
+
+class _SurveillancePageState extends State<_SurveillancePage> {
+  static const LatLng _cityCenter = LatLng(13.8167, 100.561);
+  static const double _minZoom = 10.0;
+  static const double _maxZoom = 16.5;
+  static const double _defaultZoom = 12.0;
+
+  GoogleMapController? _mapController;
+  double _cameraZoom = _defaultZoom;
+  String? _selectedRiskId;
+  _SurveillanceFilter _filter = _SurveillanceFilter.all;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_showRiskAreaNoticeSafely);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fitToVisibleRisks());
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _showRiskAreaNoticeSafely() async {
+    try {
+      await LocalNotificationService.showRiskAreaAlert(
+        title: 'เฝ้าระวังโรคสัตว์สู่คน',
+        body:
+            'เขตจตุจักรมีการแจ้งสัตว์ป่วยผิดปกติ โปรดหลีกเลี่ยงการสัมผัสและติดตามประกาศพื้นที่เสี่ยง',
+      );
+    } catch (_) {
+      // Best effort only.
+    }
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fitToVisibleRisks());
+  }
+
+  List<_SurveillanceRisk> get _allRisks => _surveillanceRisks;
+
+  List<_SurveillanceRisk> get _filteredRisks {
+    return switch (_filter) {
+      _SurveillanceFilter.all => _allRisks,
+      _SurveillanceFilter.high =>
+        _allRisks.where((item) => item.level == _RiskLevel.high).toList(),
+      _SurveillanceFilter.medium =>
+        _allRisks.where((item) => item.level == _RiskLevel.medium).toList(),
+      _SurveillanceFilter.watch =>
+        _allRisks.where((item) => item.level == _RiskLevel.watch).toList(),
+    };
+  }
+
+  List<_SurveillanceRisk> get _mapRisks {
+    return _filteredRisks;
+  }
+
+  List<_SurveillanceRisk> get _previewRisks {
+    if (widget.mode == _SurveillancePageMode.overview) {
+      return _filteredRisks.take(3).toList();
+    }
+    return _filteredRisks;
+  }
+
+  _SurveillanceRisk? get _selectedRisk {
+    if (_selectedRiskId == null) return null;
+    final risks = _mapRisks;
+    if (risks.isEmpty) return null;
+    for (final risk in risks) {
+      if (risk.id == _selectedRiskId) {
+        return risk;
+      }
+    }
+    return null;
+  }
+
+  Set<Marker> get _markers {
+    final selectedRisk = _selectedRisk;
+    final risksToShow =
+        selectedRisk == null ? _mapRisks : <_SurveillanceRisk>[selectedRisk];
+
+    return risksToShow.map((risk) {
+      return Marker(
+        markerId: MarkerId(risk.id),
+        position: risk.position,
+        icon: BitmapDescriptor.defaultMarkerWithHue(risk.level.markerHue),
+        zIndexInt: selectedRisk?.id == risk.id ? 2 : 1,
+        onTap: () => _selectRisk(risk),
+        infoWindow: InfoWindow(
+          title: risk.title,
+          snippet: '${risk.area} · ${risk.level.label}',
+        ),
+      );
+    }).toSet();
+  }
+
+  Set<Circle> get _circles {
+    final selectedRisk = _selectedRisk;
+    final risksToShow =
+        selectedRisk == null ? _mapRisks : <_SurveillanceRisk>[selectedRisk];
+
+    return risksToShow.map((risk) {
+      final isSelected = selectedRisk?.id == risk.id;
+      final color = risk.level.color;
+      return Circle(
+        circleId: CircleId(risk.id),
+        center: risk.position,
+        radius: risk.radiusMeters,
+        strokeWidth: isSelected ? 4 : 2,
+        strokeColor: color,
+        fillColor: color.withValues(alpha: isSelected ? 0.20 : 0.12),
+      );
+    }).toSet();
+  }
+
+  Future<void> _selectRisk(
+    _SurveillanceRisk risk, {
+    bool focusMap = true,
+  }) async {
+    if (!mounted) return;
+    final isSameSelection = _selectedRiskId == risk.id;
+    setState(() {
+      _selectedRiskId = isSameSelection ? null : risk.id;
+    });
+    if (focusMap) {
+      if (isSameSelection) {
+        await _fitToVisibleRisks();
+      } else {
+        await _focusOnRisk(risk);
+      }
+    }
+  }
+
+  Future<void> _focusOnRisk(_SurveillanceRisk risk) async {
+    final controller = _mapController;
+    if (controller == null) return;
+
+    await controller.animateCamera(
+      CameraUpdate.newLatLngZoom(risk.position, 14.2),
+    );
+    setState(() {
+      _cameraZoom = 14.2;
+    });
+  }
+
+  Future<void> _fitToVisibleRisks() async {
+    final controller = _mapController;
+    final risks = _mapRisks;
+    if (controller == null || risks.isEmpty) return;
+
+    if (risks.length == 1) {
+      await _focusOnRisk(risks.first);
+      return;
+    }
+
+    final bounds = _boundsFor(risks.map((risk) => risk.position));
+    try {
+      await controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 48));
+    } catch (_) {
+      await controller.animateCamera(
+        CameraUpdate.newLatLngZoom(_cityCenter, _defaultZoom),
+      );
+    }
+  }
+
+  LatLngBounds _boundsFor(Iterable<LatLng> points) {
+    final latitudes = points.map((point) => point.latitude).toList();
+    final longitudes = points.map((point) => point.longitude).toList();
+    final southWest = LatLng(
+      latitudes.reduce(math.min),
+      longitudes.reduce(math.min),
+    );
+    final northEast = LatLng(
+      latitudes.reduce(math.max),
+      longitudes.reduce(math.max),
+    );
+    return LatLngBounds(southwest: southWest, northeast: northEast);
+  }
+
+  Future<void> _zoomTo(double nextZoom) async {
+    final controller = _mapController;
+    if (controller == null) return;
+
+    final clampedZoom = nextZoom.clamp(_minZoom, _maxZoom).toDouble();
+    if ((clampedZoom - _cameraZoom).abs() < 0.01) return;
+
+    setState(() {
+      _cameraZoom = clampedZoom;
+    });
+    await controller.animateCamera(CameraUpdate.zoomTo(clampedZoom));
+  }
+
+  void _setFilter(_SurveillanceFilter filter) {
+    setState(() {
+      _filter = filter;
+      final visibleIds = _filteredRisks.map((item) => item.id).toSet();
+      if (_selectedRiskId != null && !visibleIds.contains(_selectedRiskId)) {
+        _selectedRiskId = null;
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fitToVisibleRisks());
+  }
+
+  void _resetSelectionAndFit() {
+    setState(() {
+      _selectedRiskId = null;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fitToVisibleRisks());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedRisk = _selectedRisk;
+    final mapHeight =
+        widget.mode == _SurveillancePageMode.overview ? 470.0 : 420.0;
+    final title =
+        widget.mode == _SurveillancePageMode.overview
+            ? 'เฝ้าระวังโรคสัตว์สู่คน'
+            : 'พื้นที่เฝ้าระวังทั้งหมด';
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBarMainApp(
-        title: 'เฝ้าระวังโรคสัตว์สู่คน',
+        title: title,
         onBack: () => Navigator.pop(context),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppColors.greenlight.withValues(alpha: 0.55),
-              ),
-            ),
-            child: Text(
-              'พื้นที่เฝ้าระวังตั้งต้น: เขตจตุจักร\nระบบจะแสดงจุดเสี่ยงบนพื้นที่และแจ้งเตือนผู้ใช้งานที่อยู่ในรัศมีประมาณ 5 กิโลเมตร',
+          _SurveillanceCategoryTabs(
+            selectedFilter: _filter,
+            onChanged: _setFilter,
+          ),
+          const SizedBox(height: 10),
+          _SurveillanceMapPanel(
+            height: mapHeight,
+            cameraZoom: _cameraZoom,
+            minZoom: _minZoom,
+            maxZoom: _maxZoom,
+            onZoomIn:
+                _cameraZoom >= _maxZoom ? null : () => _zoomTo(_cameraZoom + 1),
+            onZoomOut:
+                _cameraZoom <= _minZoom ? null : () => _zoomTo(_cameraZoom - 1),
+            onResetView: _resetSelectionAndFit,
+            selectedRisk: selectedRisk,
+            visibleCount: _mapRisks.length,
+            markers: _markers,
+            circles: _circles,
+            onMapCreated: _onMapCreated,
+            onCameraMove: (position) {
+              if ((position.zoom - _cameraZoom).abs() < 0.01) return;
+              setState(() {
+                _cameraZoom = position.zoom;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          if (widget.mode == _SurveillancePageMode.overview) ...[
+            Text(
+              'ตัวอย่างพื้นที่เฝ้าระวัง',
               style: TextStyle(
-                color: AppColors.primarySecondary,
-                fontSize: 13,
-                height: 1.5,
-                fontWeight: FontWeight.w600,
+                color: AppColors.greyscale_900,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            height: 240,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppColors.greyscale_200),
+            const SizedBox(height: 10),
+            ..._previewRisks.map(
+              (risk) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _SurveillanceRiskCard(
+                  risk: risk,
+                  isSelected: risk.id == selectedRisk?.id,
+                  onTap: () => _selectRisk(risk),
+                ),
+              ),
             ),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          AppColors.primaryLight.withValues(alpha: 0.12),
-                          AppColors.greyscale_25,
-                        ],
-                      ),
-                    ),
+          ] else ...[
+            const SizedBox(height: 12),
+            _SectionHeader(
+              title: 'รายการพื้นที่เฝ้าระวัง',
+              actionLabel: 'รีเซ็ตมุมมอง',
+              onActionTap: _resetSelectionAndFit,
+            ),
+            const SizedBox(height: 10),
+            if (_previewRisks.isEmpty)
+              const _SurveillanceEmptyState()
+            else
+              ..._previewRisks.map(
+                (risk) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _SurveillanceRiskCard(
+                    risk: risk,
+                    isSelected: risk.id == selectedRisk?.id,
+                    onTap: () => _selectRisk(risk),
+                    showChevron: false,
                   ),
                 ),
-                Positioned.fill(child: CustomPaint(painter: _RiskMapPainter())),
-                Positioned(
-                  left: 12,
-                  top: 12,
-                  child: _MapLegend(
-                    label: 'รัศมีแจ้งเตือน 5 กม.',
-                    color: AppColors.primary,
-                  ),
-                ),
-                for (final hotspot in hotspots)
-                  Align(
-                    alignment: hotspot.position,
-                    child: _HotspotMarker(point: hotspot),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...hotspots.map(
-            (point) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _HotspotCard(point: point),
-            ),
-          ),
+              ),
+          ],
         ],
       ),
     );
@@ -759,76 +990,253 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
-class _HotspotPoint {
-  const _HotspotPoint({
-    required this.name,
+class _SurveillanceRisk {
+  const _SurveillanceRisk({
+    required this.id,
+    required this.title,
     required this.area,
-    required this.severity,
+    required this.district,
+    required this.summary,
+    required this.recommendation,
+    required this.level,
     required this.position,
+    required this.radiusKm,
+    required this.updatedAt,
   });
 
-  final String name;
+  final String id;
+  final String title;
   final String area;
-  final String severity;
-  final Alignment position;
+  final String district;
+  final String summary;
+  final String recommendation;
+  final _RiskLevel level;
+  final LatLng position;
+  final double radiusKm;
+  final DateTime updatedAt;
+
+  double get radiusMeters => radiusKm * 1000;
 }
 
-class _HotspotMarker extends StatelessWidget {
-  const _HotspotMarker({required this.point});
+extension _RiskLevelStyle on _RiskLevel {
+  String get label {
+    return switch (this) {
+      _RiskLevel.high => 'ความเสี่ยงสูง',
+      _RiskLevel.medium => 'ความเสี่ยงปานกลาง',
+      _RiskLevel.watch => 'เฝ้าระวัง',
+    };
+  }
 
-  final _HotspotPoint point;
+  String get shortLabel {
+    return switch (this) {
+      _RiskLevel.high => 'สูง',
+      _RiskLevel.medium => 'ปานกลาง',
+      _RiskLevel.watch => 'ติดตาม',
+    };
+  }
+
+  Color get color {
+    return switch (this) {
+      _RiskLevel.high => const Color(0xFFE53935),
+      _RiskLevel.medium => const Color(0xFFEF8C18),
+      _RiskLevel.watch => const Color(0xFFF6C453),
+    };
+  }
+
+  double get markerHue {
+    return switch (this) {
+      _RiskLevel.high => BitmapDescriptor.hueRed,
+      _RiskLevel.medium => BitmapDescriptor.hueOrange,
+      _RiskLevel.watch => BitmapDescriptor.hueYellow,
+    };
+  }
+}
+
+final List<_SurveillanceRisk> _surveillanceRisks = [
+  _SurveillanceRisk(
+    id: 'risk-01',
+    title: 'จุดแจ้งสัตว์ป่วยผิดปกติ',
+    area: 'แขวงจอมพล เขตจตุจักร',
+    district: 'เขตจตุจักร',
+    summary: 'มีการแจ้งสัตว์ป่วยผิดปกติใกล้แนวชุมชนและจุดรับบริการสาธารณะ',
+    recommendation:
+        'หลีกเลี่ยงการสัมผัสสัตว์ป่วยและแจ้งเจ้าหน้าที่หากพบเหตุซ้ำ',
+    level: _RiskLevel.high,
+    position: LatLng(13.8092, 100.5589),
+    radiusKm: 5.0,
+    updatedAt: DateTime(2026, 8, 11, 9, 30),
+  ),
+  _SurveillanceRisk(
+    id: 'risk-02',
+    title: 'จุดเฝ้าระวังภาคสนาม',
+    area: 'แขวงลาดยาว เขตจตุจักร',
+    district: 'เขตจตุจักร',
+    summary: 'พื้นที่ติดตามการเคลื่อนย้ายสัตว์และการสัมผัสใกล้ชิดในชุมชน',
+    recommendation:
+        'สวมอุปกรณ์ป้องกันเมื่อเข้าพื้นที่ และล้างมือหลังสัมผัสสัตว์',
+    level: _RiskLevel.medium,
+    position: LatLng(13.8216, 100.5612),
+    radiusKm: 3.8,
+    updatedAt: DateTime(2026, 8, 11, 11, 10),
+  ),
+  _SurveillanceRisk(
+    id: 'risk-03',
+    title: 'รายงานสัตว์ตายผิดปกติ',
+    area: 'แขวงเสนานิคม เขตจตุจักร',
+    district: 'เขตจตุจักร',
+    summary: 'พบรายงานการตายผิดปกติใกล้เส้นทางสัญจรและพื้นที่น้ำขัง',
+    recommendation: 'หลีกเลี่ยงการสัมผัสซากสัตว์และแจ้งเจ้าหน้าที่ทันที',
+    level: _RiskLevel.watch,
+    position: LatLng(13.8078, 100.5468),
+    radiusKm: 2.6,
+    updatedAt: DateTime(2026, 8, 11, 12, 5),
+  ),
+  _SurveillanceRisk(
+    id: 'risk-04',
+    title: 'แนวตรวจจับรอบตลาดชุมชน',
+    area: 'แขวงจันทรเกษม เขตจตุจักร',
+    district: 'เขตจตุจักร',
+    summary: 'เพิ่มการตรวจสอบจุดจำหน่ายสัตว์และพื้นที่ที่มีการรวมตัวของผู้คน',
+    recommendation: 'งดปล่อยสัตว์เดินอิสระและติดตามประกาศจากหน่วยงาน',
+    level: _RiskLevel.medium,
+    position: LatLng(13.8301, 100.5541),
+    radiusKm: 4.2,
+    updatedAt: DateTime(2026, 8, 11, 12, 45),
+  ),
+  _SurveillanceRisk(
+    id: 'risk-05',
+    title: 'พื้นที่แจ้งเตือนภาคสนามพิเศษ',
+    area: 'แขวงบางเขน เขตบางเขน',
+    district: 'เขตบางเขน',
+    summary: 'จุดติดตามกรณีรายงานอาการผิดปกติจากจุดบริการเคลื่อนที่',
+    recommendation:
+        'หากพบสัตว์มีอาการผิดปกติให้หลีกเลี่ยงการเข้าใกล้และแจ้งต่อทันที',
+    level: _RiskLevel.high,
+    position: LatLng(13.8473, 100.5832),
+    radiusKm: 2.1,
+    updatedAt: DateTime(2026, 8, 11, 13, 18),
+  ),
+  _SurveillanceRisk(
+    id: 'risk-06',
+    title: 'จุดติดตามแนวขนส่ง',
+    area: 'แขวงลาดพร้าว เขตลาดพร้าว',
+    district: 'เขตลาดพร้าว',
+    summary: 'ตรวจสอบการเคลื่อนย้ายสัตว์เลี้ยงตามเส้นทางขนส่งและสถานีเชื่อมต่อ',
+    recommendation:
+        'ติดตามสถานะพื้นที่ก่อนเดินทางและหลีกเลี่ยงการรวมกลุ่มโดยไม่จำเป็น',
+    level: _RiskLevel.watch,
+    position: LatLng(13.8152, 100.6051),
+    radiusKm: 3.0,
+    updatedAt: DateTime(2026, 8, 11, 13, 42),
+  ),
+];
+
+class _SurveillanceMapPanel extends StatelessWidget {
+  const _SurveillanceMapPanel({
+    required this.height,
+    required this.cameraZoom,
+    required this.minZoom,
+    required this.maxZoom,
+    required this.onZoomIn,
+    required this.onZoomOut,
+    required this.onResetView,
+    required this.selectedRisk,
+    required this.visibleCount,
+    required this.markers,
+    required this.circles,
+    required this.onMapCreated,
+    required this.onCameraMove,
+  });
+
+  final double height;
+  final double cameraZoom;
+  final double minZoom;
+  final double maxZoom;
+  final VoidCallback? onZoomIn;
+  final VoidCallback? onZoomOut;
+  final VoidCallback onResetView;
+  final _SurveillanceRisk? selectedRisk;
+  final int visibleCount;
+  final Set<Marker> markers;
+  final Set<Circle> circles;
+  final void Function(GoogleMapController controller) onMapCreated;
+  final void Function(CameraPosition position) onCameraMove;
 
   @override
   Widget build(BuildContext context) {
-    final severityColor = switch (point.severity) {
-      'สูง' => Colors.redAccent,
-      'ปานกลาง' => Colors.orange,
-      _ => AppColors.primary,
-    };
-
-    return Transform.translate(
-      offset: const Offset(0, -6),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return Container(
+      height: height,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.greyscale_200),
+      ),
+      child: Stack(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: severityColor.withValues(alpha: 0.35)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Text(
-              point.severity,
-              style: TextStyle(
-                color: severityColor,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w700,
+          Positioned.fill(
+            child: GoogleMap(
+              onMapCreated: onMapCreated,
+              onCameraMove: onCameraMove,
+              initialCameraPosition: const CameraPosition(
+                target: _SurveillancePageState._cityCenter,
+                zoom: _SurveillancePageState._defaultZoom,
               ),
+              gestureRecognizers: {
+                Factory<OneSequenceGestureRecognizer>(
+                  () => EagerGestureRecognizer(),
+                ),
+              },
+              markers: markers,
+              circles: circles,
+              myLocationEnabled: false,
+              myLocationButtonEnabled: false,
+              zoomGesturesEnabled: true,
+              scrollGesturesEnabled: true,
+              rotateGesturesEnabled: true,
+              tiltGesturesEnabled: true,
+              zoomControlsEnabled: false,
+              mapToolbarEnabled: false,
+              compassEnabled: false,
+              trafficEnabled: false,
+              buildingsEnabled: false,
             ),
           ),
-          const SizedBox(height: 5),
-          Container(
-            width: 16,
-            height: 16,
-            decoration: BoxDecoration(
-              color: severityColor,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2.5),
-              boxShadow: [
-                BoxShadow(
-                  color: severityColor.withValues(alpha: 0.35),
-                  blurRadius: 10,
-                  spreadRadius: 1,
+          Positioned(
+            left: 12,
+            top: 12,
+            child: _MapLegend(
+              label:
+                  selectedRisk == null
+                      ? 'แสดงทั้งหมด $visibleCount จุด'
+                      : 'แสดงเฉพาะ 1 จุด',
+              color: AppColors.primarySecondary,
+            ),
+          ),
+          Positioned(
+            right: 12,
+            top: 56,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _MapControlButton(icon: Icons.add, onTap: onZoomIn),
+                const SizedBox(height: 8),
+                _MapControlButton(icon: Icons.remove, onTap: onZoomOut),
+                const SizedBox(height: 8),
+                _MapControlButton(
+                  icon: Icons.center_focus_strong,
+                  onTap: onResetView,
                 ),
               ],
+            ),
+          ),
+          Positioned(
+            right: 12,
+            bottom: selectedRisk == null ? 12 : null,
+            top: selectedRisk == null ? null : 12,
+            child: _MapLegend(
+              label: 'ซูม ${cameraZoom.toStringAsFixed(1)}',
+              color: AppColors.greyscale_400,
             ),
           ),
         ],
@@ -837,40 +1245,45 @@ class _HotspotMarker extends StatelessWidget {
   }
 }
 
-class _RiskMapPainter extends CustomPainter {
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.title,
+    required this.actionLabel,
+    required this.onActionTap,
+  });
+
+  final String title;
+  final String actionLabel;
+  final VoidCallback onActionTap;
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final linePaint =
-        Paint()
-          ..color = AppColors.greyscale_200
-          ..strokeWidth = 1;
-
-    for (double y = 0; y <= size.height; y += size.height / 6) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
-    }
-    for (double x = 0; x <= size.width; x += size.width / 6) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), linePaint);
-    }
-
-    final radiusPaint =
-        Paint()
-          ..color = AppColors.primary.withValues(alpha: 0.08)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2;
-    canvas.drawCircle(
-      Offset(size.width * 0.55, size.height * 0.48),
-      size.shortestSide * 0.30,
-      radiusPaint,
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.55, size.height * 0.48),
-      size.shortestSide * 0.18,
-      radiusPaint..color = AppColors.primary.withValues(alpha: 0.16),
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              color: AppColors.greyscale_900,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: onActionTap,
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.primarySecondary,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          ),
+          child: Text(
+            actionLabel,
+            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+          ),
+        ),
+      ],
     );
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _MapLegend extends StatelessWidget {
@@ -882,7 +1295,7 @@ class _MapLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(999),
@@ -901,7 +1314,7 @@ class _MapLegend extends StatelessWidget {
             label,
             style: TextStyle(
               color: AppColors.greyscale_900,
-              fontSize: 11,
+              fontSize: 10.5,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -911,63 +1324,387 @@ class _MapLegend extends StatelessWidget {
   }
 }
 
-class _HotspotCard extends StatelessWidget {
-  const _HotspotCard({required this.point});
+class _MapControlButton extends StatelessWidget {
+  const _MapControlButton({required this.icon, required this.onTap});
 
-  final _HotspotPoint point;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return Material(
+      color: Colors.white,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.greyscale_200),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: 38,
+          height: 38,
+          child: Icon(
+            icon,
+            size: 20,
+            color:
+                enabled ? AppColors.primarySecondary : AppColors.greyscale_300,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SurveillanceCategoryTabs extends StatelessWidget {
+  const _SurveillanceCategoryTabs({
+    required this.selectedFilter,
+    required this.onChanged,
+  });
+
+  final _SurveillanceFilter selectedFilter;
+  final ValueChanged<_SurveillanceFilter> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <_SurveillanceFilter, ({String label, IconData icon})>{
+      _SurveillanceFilter.high: (label: 'สูง', icon: Icons.warning_rounded),
+      _SurveillanceFilter.medium: (
+        label: 'ปานกลาง',
+        icon: Icons.priority_high_rounded,
+      ),
+      _SurveillanceFilter.watch: (
+        label: 'เฝ้าระวัง',
+        icon: Icons.shield_outlined,
+      ),
+    };
+
+    final entries = items.entries.toList();
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.greyscale_25,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: AppColors.greyscale_200),
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < entries.length; i++) ...[
+            Expanded(
+              child: _SurveillanceCategoryTab(
+                label: entries[i].value.label,
+                icon: entries[i].value.icon,
+                selected: entries[i].key == selectedFilter,
+                selectedColor: switch (entries[i].key) {
+                  _SurveillanceFilter.all => AppColors.primarySecondary,
+                  _SurveillanceFilter.high => _RiskLevel.high.color,
+                  _SurveillanceFilter.medium => _RiskLevel.medium.color,
+                  _SurveillanceFilter.watch => _RiskLevel.watch.color,
+                },
+                onTap: () => onChanged(entries[i].key),
+              ),
+            ),
+            if (i != entries.length - 1) const SizedBox(width: 6),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SurveillanceCategoryTab extends StatelessWidget {
+  const _SurveillanceCategoryTab({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.selectedColor,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final Color selectedColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(11),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(11),
+          boxShadow:
+              selected
+                  ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 6,
+                    ),
+                  ]
+                  : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 17,
+              color: selected ? selectedColor : AppColors.greyscale_400,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.0,
+                fontWeight: FontWeight.w600,
+                color: selected ? selectedColor : AppColors.greyscale_400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SurveillanceRiskCard extends StatelessWidget {
+  const _SurveillanceRiskCard({
+    required this.risk,
+    required this.isSelected,
+    required this.onTap,
+    this.showChevron = false,
+  });
+
+  final _SurveillanceRisk risk;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final bool showChevron;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = risk.level.color;
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isSelected ? accent.withValues(alpha: 0.05) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color:
+                  isSelected
+                      ? accent.withValues(alpha: 0.35)
+                      : AppColors.greyscale_200,
+              width: isSelected ? 1.2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  risk.level == _RiskLevel.high
+                      ? Icons.warning_rounded
+                      : risk.level == _RiskLevel.medium
+                      ? Icons.place_rounded
+                      : Icons.remove_red_eye_rounded,
+                  color: accent,
+                  size: 21,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            risk.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: AppColors.greyscale_900,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w800,
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                        if (showChevron) ...[
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: AppColors.greyscale_300,
+                            size: 22,
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${risk.area} · ${risk.level.label}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.greyscale_400,
+                        fontSize: 12.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      risk.summary,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.greyscale_400,
+                        fontSize: 12.2,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _MiniTag(label: risk.level.shortLabel, color: accent),
+                        _MiniTag(
+                          label:
+                              'รัศมี ${risk.radiusKm.toStringAsFixed(1)} กม.',
+                          color: AppColors.primarySecondary,
+                        ),
+                        _MiniTag(
+                          label: _thaiDate(risk.updatedAt),
+                          color: AppColors.greyscale_400,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniTag extends StatelessWidget {
+  const _MiniTag({required this.label, required this.color});
+
+  final String label;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10.8,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _SurveillanceEmptyState extends StatelessWidget {
+  const _SurveillanceEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.greyscale_200),
       ),
-      child: Row(
+      child: Column(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: Colors.redAccent.withValues(alpha: 0.12),
+              color: AppColors.primaryLight.withValues(alpha: 0.18),
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.warning_rounded,
-              color: Colors.redAccent,
-              size: 20,
+              Icons.radar_rounded,
+              color: AppColors.primarySecondary,
+              size: 28,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  point.name,
-                  style: TextStyle(
-                    color: AppColors.greyscale_900,
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  point.area,
-                  style: TextStyle(
-                    color: AppColors.greyscale_400,
-                    fontSize: 12.5,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 12),
+          Text(
+            'ยังไม่พบพื้นที่เฝ้าระวังตามตัวกรองนี้',
+            style: TextStyle(
+              color: AppColors.greyscale_900,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'ลองเปลี่ยนตัวกรองเป็น "ทั้งหมด" หรือเลือกประเภทความเสี่ยงอื่น',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.greyscale_400,
+              fontSize: 12.2,
+              height: 1.4,
             ),
           ),
         ],
       ),
     );
   }
+}
+
+String _thaiDate(DateTime dateTime) {
+  const months = <String>[
+    'ม.ค.',
+    'ก.พ.',
+    'มี.ค.',
+    'เม.ย.',
+    'พ.ค.',
+    'มิ.ย.',
+    'ก.ค.',
+    'ส.ค.',
+    'ก.ย.',
+    'ต.ค.',
+    'พ.ย.',
+    'ธ.ค.',
+  ];
+
+  final date = dateTime.toLocal();
+  return '${date.day} ${months[date.month - 1]} ${date.year + 543}';
 }
 
 class NearbyClinicsPage extends StatelessWidget {
